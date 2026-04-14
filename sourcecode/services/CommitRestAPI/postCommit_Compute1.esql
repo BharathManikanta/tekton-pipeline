@@ -31,7 +31,7 @@ CREATE COMPUTE MODULE postCommit_Compute1
 		IF envRef.Consolelogflag = 'Y' THEN
 			LOG EVENT VALUES('HOST_RES: ', Environment.payload, application_name, MessageFlowLabel, Environment."X-Request-Id", created_On,BrokerName,ExecutionGroupLabel,NodeLabel);
 		END IF;
-		-- Following Lines of Code is to Transform Host Response in SOAP Format to Channel Response in JSON Format           
+		-- Following Lines of Code is to Transform Host Response in SOAP Format to Channel Response in JSON Format             
 		DECLARE inrefRes REFERENCE TO InputRoot.XMLNSC.*:Envelope.*:Body.*:SBGenericTransferandPaymentsResponse.Status;
 		DECLARE inrefBody REFERENCE TO InputRoot.XMLNSC.*:Envelope.*:Body.*:SBGenericTransferandPaymentsResponse;
 		DECLARE fundTransType REFERENCE TO InputRoot.XMLNSC.*:Envelope.*:Body.*:SBGenericTransferandPaymentsResponse.*:FUNDSTRANSFERType;
