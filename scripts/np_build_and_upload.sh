@@ -97,6 +97,6 @@ done < .changed_services
 echo "===== BUILD COMPLETED ====="
 
 ls -l bar/
-
-cp .env "$WORKSPACE" || true
-cp .changed_services "$WORKSPACE" || true
+cd /workspace/shared-workspace/repo/
+ls -l scripts/
+ls -l sourcecode/
