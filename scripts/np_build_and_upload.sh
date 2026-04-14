@@ -100,3 +100,5 @@ ls -l bar/
 cd /workspace/shared-workspace/repo/
 ls -l scripts/
 ls -l sourcecode/
+ls -l sourcecode/integration-servers/CommitRestAPI
+ls -l sourcecode/integration-servers/cashAdvanceAPI
