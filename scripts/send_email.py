@@ -2,51 +2,53 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import argparse
-from generate_email import generate_email_content  # Assuming generate_email.py is in the same directory
+import os
+from generate_email import generate_email_content
 
-# Function to send email with dynamic SMTP configuration
+
 def send_email(subject, html_content, recipient, smtp_user):
-    # SMTP server configuration (same for all environments)
-    smtp_server = 'localhost'
-    smtp_port = 1025
-    smtp_password = 'n/a'
+    # ✅ Support both LOCAL + COMPANY SMTP
+    smtp_server = os.getenv("SMTP_SERVER", "10.144.27.11")
+    smtp_port = int(os.getenv("SMTP_PORT", "25"))
 
-    # Create the email
+    print(f"Using SMTP Server: {smtp_server}:{smtp_port}")
+
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = smtp_user
     msg['To'] = recipient
 
-    # Attach the HTML content
     part = MIMEText(html_content, 'html')
     msg.attach(part)
 
-    # Send the email
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        recipients = 'edilson.mucanze@standardbank.co.mz,tirapa.tondapu@standardbank.co.mz,bharath.gundapu@standardbank.co.mz,padma.padma@standardbank.co.mz'
-        msg['To'] = recipients
-        server.sendmail(msg['From'], recipients.split(','), msg.as_string())
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.sendmail(msg['From'], recipient.split(','), msg.as_string())
+            print("✅ Email sent successfully")
+    except Exception as e:
+        print("❌ Failed to send email:", str(e))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate and send email.')
-    parser.add_argument('--name', required=True, help='Name of the user')
-    parser.add_argument('--status', required=True, help='Build status')
-    parser.add_argument('--service_name', required=True, help='Service name')
-    parser.add_argument('--build_number', required=True, help='Build number')
-    parser.add_argument('--build_time', required=True, help='Build time')
-    parser.add_argument('--url', required=True, help='URL for the build')
-    parser.add_argument('--recipient', required=True, help='Recipient email address')
-    parser.add_argument('--environment', required=True, help='Environment (nonprod, prod, dr)')
+
+    parser.add_argument('--name', required=True)
+    parser.add_argument('--status', required=True)
+    parser.add_argument('--service_name', required=True)
+    parser.add_argument('--build_number', required=True)
+    parser.add_argument('--build_time', required=True)
+    parser.add_argument('--url', required=True)
+    parser.add_argument('--recipient', required=True)
+    parser.add_argument('--environment', required=True)
 
     args = parser.parse_args()
 
-    # Clean up the service name to avoid newline issues
-    clean_service_name = args.service_name.replace('\n', ', ')
+    # ✅ Clean service names
+    clean_service_name = args.service_name.replace('\n', ', ').strip()
 
-    # Generate email content
     html_content = generate_email_content(args)
 
-    # Determine the correct SMTP user (sender email) based on the environment
+    # ✅ Dynamic sender
     if args.environment == 'nonprod':
         smtp_user = 'ocp-nonprod@standardbank.co.mz'
     elif args.environment == 'prod':
@@ -56,5 +58,9 @@ if __name__ == '__main__':
     else:
         raise ValueError(f"Unknown environment: {args.environment}")
 
-    # Send email with environment-specific SMTP user
-    send_email(f'{clean_service_name}-CP4I Job Completion Notification', html_content, args.recipient, smtp_user)
+    send_email(
+        f'{clean_service_name}-CP4I Job Notification',
+        html_content,
+        args.recipient,
+        smtp_user
+    )
