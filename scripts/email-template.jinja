@@ -1,0 +1,15 @@
+<html>
+<body>
+    <p>Hello {{ name }},</p>
+    <p>The Build job for the {{service_name}} has completed successfully.</p>
+    <p><strong>Build Details:</strong></p>
+    <ul>
+        <li><strong>Build Number:</strong> {{ build_number }}</li>
+        <li><strong>Build Time:</strong> {{ build_time }}</li>
+        <li><strong>Service Name:</strong> {{ service_name }}</li>
+    </ul>
+    <p>For approval to run the CD job deployment in the {{environment}} Environment, please click the following link and press the play button under the 'deploy' stage:
+    {{url}}</p>
+    <p>Thanks & Regards,<br> DevOps Team</p>
+</body>
+</html>
