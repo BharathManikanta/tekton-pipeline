@@ -56,7 +56,7 @@ CREATE COMPUTE MODULE postCommit_Compute1
 			END IF;
 
 		ELSE
-			SET OutputRoot.JSON.Data.statusCode = InputRoot.HTTPResponseHeader."X-Original-HTTP-Status-Code";
+			SET OutputRoot.JSON.Data.statusCode = InputRoot.HTTPResponseHeader."X-Original-HTTP-Status-Code"; 
 			SET OutputRoot.JSON.Data.message = 'Operation performed successfully';
 			SET outref.clientTransactionId = fundTransType.*:id;
 			SET outref.transactionType = fundTransType.*:TRANSACTIONTYPE;
