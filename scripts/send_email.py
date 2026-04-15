@@ -8,8 +8,8 @@ from generate_email import generate_email_content
 
 def send_email(subject, html_content, recipient, smtp_user):
     # ✅ Support both LOCAL + COMPANY SMTP
-    smtp_server = os.getenv("SMTP_SERVER", "10.144.27.11")
-    smtp_port = int(os.getenv("SMTP_PORT", "25"))
+    smtp_server = os.getenv("SMTP_SERVER", "localhost")
+    smtp_port = int(os.getenv("SMTP_PORT", "1025"))
 
     print(f"Using SMTP Server: {smtp_server}:{smtp_port}")
 
