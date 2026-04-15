@@ -11,112 +11,112 @@ echo "BUILD_NUMBER=$BUILD_NUMBER" > .env
 
 CI_PROJECT_NAME="tekton-pipeline"
 
-echo "Build Number: $BUILD_NUMBER"
-
 # -------------------------------
 # 🔍 Detect changed files
 # -------------------------------
 echo "Detecting changed files..."
 
 CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-
 echo "$CHANGED_FILES"
 
-# -------------------------------
-# ✅ Extract changed services
-# -------------------------------
+# Extract services
 echo "$CHANGED_FILES" | \
   grep '^sourcecode/services/' | \
-  awk -F'/' '{print $3}' | \
-  sort | uniq > .changed_services
+  awk -F'/' '{print $3}' | sort | uniq > .changed_services
 
-# -------------------------------
-# ✅ Detect library changes
-# -------------------------------
-LIB_CHANGED=$(echo "$CHANGED_FILES" | grep '^sourcecode/libraries/' || true)
+# Extract libraries
+echo "$CHANGED_FILES" | \
+  grep '^sourcecode/libraries/' | \
+  awk -F'/' '{print $3}' | sort | uniq > .changed_libraries
 
-if [ -n "$LIB_CHANGED" ]; then
-  echo "🔥 Library changes detected. Rebuilding ALL services..."
-
-  # Overwrite with all services
-  ls sourcecode/services > .changed_services
-fi
-
-echo "Final services to build:"
+echo "Changed services:"
 cat .changed_services || true
 
-# Exit if no changes
-if [ ! -s .changed_services ]; then
+echo "Changed libraries:"
+cat .changed_libraries || true
+
+# Exit if nothing changed
+if [ ! -s .changed_services ] && [ ! -s .changed_libraries ]; then
   echo "No changes detected. Exiting build."
   exit 0
 fi
 
 # -------------------------------
-# 📦 Prepare BAR folder
+# 📦 Setup
 # -------------------------------
 mkdir -p bar
 
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 echo "TIMESTAMP=$TIMESTAMP" >> .env
 
-# -------------------------------
-# 🔨 Build BAR files
-# -------------------------------
-echo "===== BUILDING BAR FILES ====="
+ROOT_PATH="sourcecode"
 
-while read service; do
+# -------------------------------
+# 🔥 COMMON BUILD FUNCTION
+# -------------------------------
+build_bar() {
+  NAME=$1
+  TYPE=$2   # service or library
 
   echo "-----------------------------------"
-  echo "Processing service: $service"
+  echo "Building $TYPE: $NAME"
 
-  SERVICE_PATH="sourcecode/services/$service"
-
-  if [ ! -d "$SERVICE_PATH" ]; then
-    echo "Skipping $service (directory not found)"
-    continue
+  if [ "$TYPE" == "service" ]; then
+    INPUT_PATH="$ROOT_PATH"
+    EXTRA_ARGS="--application $NAME"
+  else
+    INPUT_PATH="$ROOT_PATH/libraries/$NAME"
+    EXTRA_ARGS=""
   fi
 
-  echo "Building BAR for $service..."
+  BAR_FILE="bar/${CI_PROJECT_NAME}-${NAME}-v${BUILD_NUMBER}.bar"
 
+  # ✅ SINGLE COMMAND USED FOR BOTH
   ibmint package \
-    --input-path "$SERVICE_PATH" \
-    --output-bar-file bar/${CI_PROJECT_NAME}-${service}-v${BUILD_NUMBER}.bar
-
-  BAR_FILE="bar/${CI_PROJECT_NAME}-${service}-v${BUILD_NUMBER}.bar"
+    --input-path "$INPUT_PATH" \
+    --output-bar-file "$BAR_FILE" \
+    $EXTRA_ARGS
 
   if [ ! -f "$BAR_FILE" ]; then
-    echo "ERROR: BAR not created for $service"
-    continue
+    echo "ERROR: BAR not created for $NAME"
+    return
   fi
 
-  echo "BAR created: $BAR_FILE"
+  echo "Uploading $NAME to Nexus..."
 
-  # -------------------------------
-  # 🚀 Upload to Nexus
-  # -------------------------------
-  echo "Uploading $service to Nexus..."
-
-  curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+  curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
     --upload-file "$BAR_FILE" \
-    "$NEXUS_REPOSITORY/${CI_PROJECT_NAME}-${service}-v${BUILD_NUMBER}.bar"
+    "$NEXUS_REPOSITORY/${CI_PROJECT_NAME}-${NAME}-v${BUILD_NUMBER}.bar"
 
-  curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+  curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
     --upload-file "$BAR_FILE" \
-    "$NEXUS_REPOSITORY/${CI_PROJECT_NAME}-${service}-latest-${TIMESTAMP}.bar"
+    "$NEXUS_REPOSITORY/${CI_PROJECT_NAME}-${NAME}-latest-${TIMESTAMP}.bar"
 
-  curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+  curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
     --upload-file "$BAR_FILE" \
-    "$NEXUS_REPOSITORY/${CI_PROJECT_NAME}-${service}-latest.bar"
+    "$NEXUS_REPOSITORY/${CI_PROJECT_NAME}-${NAME}-latest.bar"
+}
 
-done < .changed_services
+# -------------------------------
+# 🔨 Build SERVICES
+# -------------------------------
+if [ -s .changed_services ]; then
+  while read service; do
+    [ -z "$service" ] && continue
+    build_bar "$service" "service"
+  done < .changed_services
+fi
+
+# -------------------------------
+# 🔨 Build LIBRARIES
+# -------------------------------
+if [ -s .changed_libraries ]; then
+  while read lib; do
+    [ -z "$lib" ] && continue
+    build_bar "$lib" "library"
+  done < .changed_libraries
+fi
 
 echo "===== BUILD COMPLETED ====="
 
 ls -l bar/
-
-cd /workspace/shared-workspace/repo/
-
-ls -l scripts/
-ls -l sourcecode/
-ls -l sourcecode/integration-servers/CommitRestAPI || true
-ls -l sourcecode/integration-servers/cashAdvanceAPI || true
