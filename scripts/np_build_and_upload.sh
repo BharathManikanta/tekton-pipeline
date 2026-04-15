@@ -60,7 +60,7 @@ echo "TIMESTAMP=$TIMESTAMP" >> .env
 
 ROOT_PATH="sourcecode"
 
-# 👉 Define common libraries (like -l in mqsicreatebar)
+# 👉 Libraries (like -l in mqsicreatebar)
 COMMON_LIBS="CommonLibrary Exception_Handler"
 
 # -------------------------------
@@ -79,10 +79,11 @@ build_bar() {
 
     echo "Including libraries: $COMMON_LIBS"
 
-    # Build project list dynamically
-    PROJECT_ARGS="--project $NAME"
+    # ✅ FIX: use correct relative paths
+    PROJECT_ARGS="--project services/$NAME"
+
     for lib in $COMMON_LIBS; do
-      PROJECT_ARGS="$PROJECT_ARGS --project $lib"
+      PROJECT_ARGS="$PROJECT_ARGS --project libraries/$lib"
     done
 
     ibmint package \
@@ -91,10 +92,10 @@ build_bar() {
       --output-bar-file "$BAR_FILE"
 
   else
-    # Library build
+    # ✅ FIX: correct library path
     ibmint package \
-      --input-path "$ROOT_PATH/libraries" \
-      --project "$NAME" \
+      --input-path "$ROOT_PATH" \
+      --project "libraries/$NAME" \
       --output-bar-file "$BAR_FILE"
   fi
 
