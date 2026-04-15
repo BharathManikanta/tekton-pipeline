@@ -60,6 +60,9 @@ echo "TIMESTAMP=$TIMESTAMP" >> .env
 
 ROOT_PATH="sourcecode"
 
+# 👉 Define common libraries (like -l in mqsicreatebar)
+COMMON_LIBS="CommonLibrary Exception_Handler"
+
 # -------------------------------
 # 🔥 COMMON BUILD FUNCTION
 # -------------------------------
@@ -70,19 +73,30 @@ build_bar() {
   echo "-----------------------------------"
   echo "Building $TYPE: $NAME"
 
-  if [ "$TYPE" == "service" ]; then
-    INPUT_PATH="$ROOT_PATH"
-  else
-    INPUT_PATH="$ROOT_PATH/libraries/$NAME"
-  fi
-
   BAR_FILE="bar/${CI_PROJECT_NAME}-${NAME}-v${BUILD_NUMBER}.bar"
 
-  # ✅ FIXED COMMAND (uses --project)
-  ibmint package \
-    --input-path "$INPUT_PATH" \
-    --output-bar-file "$BAR_FILE" \
-    --project "$NAME"
+  if [ "$TYPE" == "service" ]; then
+
+    echo "Including libraries: $COMMON_LIBS"
+
+    # Build project list dynamically
+    PROJECT_ARGS="--project $NAME"
+    for lib in $COMMON_LIBS; do
+      PROJECT_ARGS="$PROJECT_ARGS --project $lib"
+    done
+
+    ibmint package \
+      --input-path "$ROOT_PATH" \
+      $PROJECT_ARGS \
+      --output-bar-file "$BAR_FILE"
+
+  else
+    # Library build
+    ibmint package \
+      --input-path "$ROOT_PATH/libraries" \
+      --project "$NAME" \
+      --output-bar-file "$BAR_FILE"
+  fi
 
   if [ ! -f "$BAR_FILE" ]; then
     echo "ERROR: BAR not created for $NAME"
