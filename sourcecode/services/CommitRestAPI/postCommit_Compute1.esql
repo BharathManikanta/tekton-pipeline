@@ -44,7 +44,7 @@ CREATE COMPUTE MODULE postCommit_Compute1
 			SET outref.transactionId = inrefRes.transactionId;
 			SET outref.messageId = inrefRes.messageId;
 			SET outref.successIndicator = inrefRes.successIndicator;
-			SET outref.application = inrefRes.application;
+			SET outref.application = inrefRes.application; 
 			SET outref.messages = FIELDVALUE(inrefRes.*[3]);
 			SET Environment.logType = 'APP_RES';
 			SET Environment.payload = CAST(ASBITSTREAM (outref)AS CHARACTER CCSID Environment.ccidRef ENCODING Environment.encodeRef);
