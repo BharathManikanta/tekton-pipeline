@@ -7,8 +7,8 @@ from generate_email import generate_email_content  # Assuming generate_email.py 
 # Function to send email with dynamic SMTP configuration
 def send_email(subject, html_content, recipient, smtp_user):
     # SMTP server configuration (same for all environments)
-    smtp_server = '10.144.27.11'
-    smtp_port = 25
+    smtp_server = 'localhost'
+    smtp_port = 1025
     smtp_password = 'n/a'
 
     # Create the email
