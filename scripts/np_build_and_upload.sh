@@ -11,23 +11,32 @@ echo "BUILD_NUMBER=$BUILD_NUMBER" > .env
 
 CI_PROJECT_NAME="tekton-pipeline"
 
+echo "Build Number: $BUILD_NUMBER"
+
 # -------------------------------
 # 🔍 Detect changed files
 # -------------------------------
 echo "Detecting changed files..."
 
 CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
 echo "$CHANGED_FILES"
 
-# Extract services
+# -------------------------------
+# ✅ Extract changed services
+# -------------------------------
 echo "$CHANGED_FILES" | \
   grep '^sourcecode/services/' | \
-  awk -F'/' '{print $3}' | sort | uniq > .changed_services
+  awk -F'/' '{print $3}' | \
+  sort | uniq > .changed_services
 
-# Extract libraries
+# -------------------------------
+# ✅ Extract changed libraries
+# -------------------------------
 echo "$CHANGED_FILES" | \
   grep '^sourcecode/libraries/' | \
-  awk -F'/' '{print $3}' | sort | uniq > .changed_libraries
+  awk -F'/' '{print $3}' | \
+  sort | uniq > .changed_libraries
 
 echo "Changed services:"
 cat .changed_services || true
@@ -42,7 +51,7 @@ if [ ! -s .changed_services ] && [ ! -s .changed_libraries ]; then
 fi
 
 # -------------------------------
-# 📦 Setup
+# 📦 Prepare BAR folder
 # -------------------------------
 mkdir -p bar
 
@@ -56,32 +65,35 @@ ROOT_PATH="sourcecode"
 # -------------------------------
 build_bar() {
   NAME=$1
-  TYPE=$2   # service or library
+  TYPE=$2
 
   echo "-----------------------------------"
   echo "Building $TYPE: $NAME"
 
   if [ "$TYPE" == "service" ]; then
     INPUT_PATH="$ROOT_PATH"
-    EXTRA_ARGS="--application $NAME"
   else
     INPUT_PATH="$ROOT_PATH/libraries/$NAME"
-    EXTRA_ARGS=""
   fi
 
   BAR_FILE="bar/${CI_PROJECT_NAME}-${NAME}-v${BUILD_NUMBER}.bar"
 
-  # ✅ SINGLE COMMAND USED FOR BOTH
+  # ✅ FIXED COMMAND (uses --project)
   ibmint package \
     --input-path "$INPUT_PATH" \
     --output-bar-file "$BAR_FILE" \
-    $EXTRA_ARGS
+    --project "$NAME"
 
   if [ ! -f "$BAR_FILE" ]; then
     echo "ERROR: BAR not created for $NAME"
     return
   fi
 
+  echo "BAR created: $BAR_FILE"
+
+  # -------------------------------
+  # 🚀 Upload to Nexus
+  # -------------------------------
   echo "Uploading $NAME to Nexus..."
 
   curl -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
@@ -100,6 +112,8 @@ build_bar() {
 # -------------------------------
 # 🔨 Build SERVICES
 # -------------------------------
+echo "===== BUILDING SERVICE BAR FILES ====="
+
 if [ -s .changed_services ]; then
   while read service; do
     [ -z "$service" ] && continue
@@ -110,6 +124,8 @@ fi
 # -------------------------------
 # 🔨 Build LIBRARIES
 # -------------------------------
+echo "===== BUILDING LIBRARY BAR FILES ====="
+
 if [ -s .changed_libraries ]; then
   while read lib; do
     [ -z "$lib" ] && continue
