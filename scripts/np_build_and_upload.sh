@@ -34,15 +34,17 @@ fi
 mkdir -p bar
 mkdir -p build_workspace
 
-# 🔥 IMPORTANT: Flatten structure
+# 🔥 Flatten structure
 echo "Preparing build workspace..."
 
 cp -r sourcecode/services/* build_workspace/ 2>/dev/null || true
 cp -r sourcecode/libraries/* build_workspace/ 2>/dev/null || true
 
-# Libraries list (like -l)
 COMMON_LIBS="CommonLibrary Exception_Handler"
 
+# -------------------------------
+# 🔥 BUILD + UPLOAD FUNCTION
+# -------------------------------
 build_bar() {
   NAME=$1
   TYPE=$2
@@ -78,9 +80,34 @@ build_bar() {
   fi
 
   echo "BAR created: $BAR_FILE"
+
+  # -------------------------------
+  # 🚀 Upload to Nexus
+  # -------------------------------
+  echo "Uploading $NAME to Nexus..."
+
+  # Versioned upload
+  curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+    --upload-file "$BAR_FILE" \
+    "${NEXUS_REPOSITORY}/${CI_PROJECT_NAME}-${NAME}-v${BUILD_NUMBER}.bar"
+
+  # Timestamp latest
+  TIMESTAMP=$(date +%Y%m%d%H%M%S)
+  curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+    --upload-file "$BAR_FILE" \
+    "${NEXUS_REPOSITORY}/${CI_PROJECT_NAME}-${NAME}-latest-${TIMESTAMP}.bar"
+
+  # Static latest
+  curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
+    --upload-file "$BAR_FILE" \
+    "${NEXUS_REPOSITORY}/${CI_PROJECT_NAME}-${NAME}-latest.bar"
+
+  echo "Upload completed for $NAME"
 }
 
-# Build services
+# -------------------------------
+# 🔨 Build services
+# -------------------------------
 if [ -s .changed_services ]; then
   while read service; do
     [ -z "$service" ] && continue
@@ -88,7 +115,9 @@ if [ -s .changed_services ]; then
   done < .changed_services
 fi
 
-# Build libraries
+# -------------------------------
+# 🔨 Build libraries
+# -------------------------------
 if [ -s .changed_libraries ]; then
   while read lib; do
     [ -z "$lib" ] && continue
