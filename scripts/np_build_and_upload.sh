@@ -22,13 +22,27 @@ CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
 
 echo "$CHANGED_FILES"
 
-# ✅ Extract ONLY services
+# -------------------------------
+# ✅ Extract changed services
+# -------------------------------
 echo "$CHANGED_FILES" | \
   grep '^sourcecode/services/' | \
   awk -F'/' '{print $3}' | \
   sort | uniq > .changed_services
 
-echo "Changed services:"
+# -------------------------------
+# ✅ Detect library changes
+# -------------------------------
+LIB_CHANGED=$(echo "$CHANGED_FILES" | grep '^sourcecode/libraries/' || true)
+
+if [ -n "$LIB_CHANGED" ]; then
+  echo "🔥 Library changes detected. Rebuilding ALL services..."
+
+  # Overwrite with all services
+  ls sourcecode/services > .changed_services
+fi
+
+echo "Final services to build:"
 cat .changed_services || true
 
 # Exit if no changes
@@ -77,7 +91,9 @@ while read service; do
 
   echo "BAR created: $BAR_FILE"
 
-  # Upload
+  # -------------------------------
+  # 🚀 Upload to Nexus
+  # -------------------------------
   echo "Uploading $service to Nexus..."
 
   curl -v -u "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" \
@@ -97,8 +113,10 @@ done < .changed_services
 echo "===== BUILD COMPLETED ====="
 
 ls -l bar/
+
 cd /workspace/shared-workspace/repo/
+
 ls -l scripts/
 ls -l sourcecode/
-ls -l sourcecode/integration-servers/CommitRestAPI
-ls -l sourcecode/integration-servers/cashAdvanceAPI
+ls -l sourcecode/integration-servers/CommitRestAPI || true
+ls -l sourcecode/integration-servers/cashAdvanceAPI || true
