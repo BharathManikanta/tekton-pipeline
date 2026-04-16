@@ -31,7 +31,7 @@ CREATE COMPUTE MODULE postCommit_Compute
 		DECLARE created_On TIMESTAMP CURRENT_TIMESTAMP;
 
 		DECLARE headerRef REFERENCE TO InputRoot.HTTPInputHeader;
-		DECLARE inRef REFERENCE TO InputRoot.JSON.Data;
+		DECLARE inRef REFERENCE TO InputRoot.JSON.Data;  
 
 		CREATE FIELD Environment.Variables.Values;
 		DECLARE envRef REFERENCE TO Environment.Variables.Values;		
