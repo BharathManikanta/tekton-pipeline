@@ -23,7 +23,7 @@ CREATE PROCEDURE DB_LOGGING_PROC(IN CREATED_ON TIMESTAMP, IN application_name CH
 BEGIN
 	DECLARE CONTINUE HANDLER FOR SQLSTATE LIKE '%' BEGIN END;
 	--CREATE LASTCHILD OF OutputRoot DOMAIN 'XMLNSC';
-	--SET OutputRoot.XMLNSC.DBLogging.id = Environment.id;
+	--SET OutputRoot.XMLNSC.DBLogging.id = Environment.id;  
 			/*SET OutputRoot.XMLNSC.DBLogging.created_On = CREATED_ON;
 			SET OutputRoot.XMLNSC.DBLogging.payload = Environment.payload;
 			SET OutputRoot.XMLNSC.DBLogging.application_name = application_name;
