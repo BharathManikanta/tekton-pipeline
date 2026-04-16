@@ -37,7 +37,7 @@ CREATE COMPUTE MODULE Exception_Compute
         DECLARE text,actualExcp,number,actualExcpText,messageText CHARACTER;
         DECLARE excptext REFERENCE TO excp.Text;
         DECLARE insertRef REFERENCE TO InputExceptionList.*[1];
-        --SET OutputRoot.XMLNSC.ERROR.ErrorType=excpType;
+        --SET OutputRoot.XMLNSC.ERROR.ErrorType=excpType;  
 
         DECLARE i INTEGER 1;
         WHILE LASTMOVE(excp) DO
