@@ -53,7 +53,7 @@ BEGIN
 		SET OutputRoot.JSON.Data.error.flowName = flowName;
 		SET OutputRoot.JSON.Data.error.serviceCode = Environment.servicecode;*/
 		DECLARE CONTINUE HANDLER FOR SQLSTATE LIKE '%' BEGIN END;
-		--DECLARE excType CHARACTER COALESCE(Environment.excpType, 'Destination Application is not up and running');
+		--DECLARE excType CHARACTER COALESCE(Environment.excpType, 'Destination Application is not up and running');  
 		DECLARE excType CHARACTER COALESCE(Environment.excpType, '');
 		IF excType = '' OR excType <> 0 OR LENGTH(excType) = 0 THEN
 			IF CONTAINS(Environment.payload, 'T24Error') THEN
